@@ -18,7 +18,7 @@ class _LoginFormState extends State<LoginForm> {
 
   String? selectedState;
   String? selectedCity;
-  String selectedGender = 'Male';
+  String selectedGender = '';
   bool agree = false;
   bool accept = false;
 
@@ -112,7 +112,7 @@ class _LoginFormState extends State<LoginForm> {
               Row(
                 children: [
                   Radio<String>(
-                    value: 'Male',
+                    value: '',
                     groupValue: selectedGender,
                     onChanged: (value) {
                       setState(() {
