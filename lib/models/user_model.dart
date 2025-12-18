@@ -8,30 +8,22 @@ class UserModel extends HiveObject {
   String name;
 
   @HiveField(1)
-  String phone;
+  String password;
 
   @HiveField(2)
   String gender;
 
   @HiveField(3)
-  String password;
-
-  @HiveField(4)
   bool agree;
 
-  @HiveField(5)
+  @HiveField(4)
   bool accept;
-
-  @HiveField(6)
-  String? imagePath;
 
   UserModel({
     required this.name,
-    required this.phone,
-    required this.gender,
     required this.password,
+    required this.gender,
     required this.agree,
     required this.accept,
-    this.imagePath,
   });
 }

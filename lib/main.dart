@@ -1,11 +1,8 @@
-import 'package:d/pratice.dart';
 import 'package:flutter/material.dart';
-import 'package:d/buttons.dart';
-import 'package:d/floatButton.dart';
-import 'package:d/BottomNavigation.dart';
-import 'package:d/show_text.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'models/user_model.dart';
 import 'screens/home_screen.dart';
-import 'database/hive_db.dart';
 void main() async {
   //runApp(const DemoApp());
   //runApp(ButtonApp());
@@ -13,7 +10,11 @@ void main() async {
   //runApp(const BottomNavBar());
   //runApp(ShowText());
   WidgetsFlutterBinding.ensureInitialized();
-  await HiveDB.init();
+
+  await Hive.initFlutter();
+  Hive.registerAdapter(UserModelAdapter());
+  await Hive.openBox<UserModel>('users');
+
   runApp(const MyApp());
 }
 
@@ -105,14 +106,16 @@ void main() async {
 // }
 
 
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const HomeScreen(),
+      home: HomeScreen(),
     );
   }
 }
+

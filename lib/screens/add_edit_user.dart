@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import '../database/hive_db.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import '../models/user_model.dart';
 
 class AddEditUser extends StatefulWidget {
   final UserModel? user;
   final int? index;
-
   const AddEditUser({Key? key, this.user, this.index}) : super(key: key);
 
   @override
@@ -14,144 +13,134 @@ class AddEditUser extends StatefulWidget {
 
 class _AddEditUserState extends State<AddEditUser> {
   final _formKey = GlobalKey<FormState>();
-
   late TextEditingController nameCtrl;
-  late TextEditingController phoneCtrl;
   late TextEditingController passwordCtrl;
-
-  String gender = 'Male';
+  String? gender;
   bool agree = false;
   bool accept = false;
+
+  final Box<UserModel> userBox = Hive.box<UserModel>('users');
+  final RegExp passwordRegex =
+  RegExp(r'^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$&*~]).{8,}$');
 
   @override
   void initState() {
     super.initState();
-
     nameCtrl = TextEditingController(text: widget.user?.name ?? '');
-    phoneCtrl = TextEditingController(text: widget.user?.phone ?? '');
     passwordCtrl = TextEditingController(text: widget.user?.password ?? '');
-
-    gender = widget.user?.gender ?? 'Male';
+    gender = widget.user?.gender;
     agree = widget.user?.agree ?? false;
     accept = widget.user?.accept ?? false;
   }
 
-  void saveUser() {
-    if (!_formKey.currentState!.validate()) return;
-
-    final user = UserModel(
-      name: nameCtrl.text,
-      phone: phoneCtrl.text,
-      gender: gender,
-      password: passwordCtrl.text,
-      agree: agree,
-      accept: accept,
-    );
-
-    if (widget.index == null) {
-      HiveDB.box.add(user);
-    } else {
-      HiveDB.box.putAt(widget.index!, user);
-    }
-
-    Navigator.pop(context);
+  @override
+  void dispose() {
+    nameCtrl.dispose();
+    passwordCtrl.dispose();
+    super.dispose();
   }
 
-  // void saveUser() async {
-  //   // 🔴 Basic validation
-  //   if (nameController.text.length < 3) {
-  //     ScaffoldMessenger.of(context)
-  //         .showSnackBar(const SnackBar(content: Text('Name must be at least 3 letters')));
-  //     return;
-  //   }
-  //
-  //   // 1️⃣ Get Hive box
-  //   final box = Hive.box<UserModel>('users');
-  //
-  //   // 2️⃣ Create user object
-  //   final user = UserModel(
-  //     name: nameController.text,
-  //     phone: phoneController.text,
-  //     password: passwordController.text,
-  //     gender: selectedGender,
-  //     agree: agree,
-  //     accept: accept,
-  //   );
-  //
-  //   // 3️⃣ Save to database
-  //   await box.add(user);
-  //
-  //   // 4️⃣ DEBUG – check saved data
-  //   print('User saved');
-  //   print('Total users: ${box.length}');
-  //   print(box.values.toList());
-  //
-  //   // 5️⃣ Go back to HomeScreen
-  //   Navigator.pop(context);
-  // }
+  void saveUser() {
+    if (_formKey.currentState!.validate() &&
+        gender != null &&
+        agree &&
+        accept) {
+      final user = UserModel(
+        name: nameCtrl.text,
+        password: passwordCtrl.text,
+        gender: gender!,
+        agree: agree,
+        accept: accept,
+      );
 
+      if (widget.user != null && widget.index != null) {
+        userBox.putAt(widget.index!, user);
+      } else {
+        userBox.add(user);
+      }
+
+      Navigator.pop(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fix errors')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add / Edit User')),
+      appBar:
+      AppBar(title: Text(widget.user == null ? 'Add User' : 'Edit User')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
           child: ListView(
             children: [
               TextFormField(
                 controller: nameCtrl,
                 decoration: const InputDecoration(labelText: 'Name'),
-                validator: (v) =>
-                v!.length < 3 ? 'Min 3 characters' : null,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Name is required';
+                  }
+                  if (value.length < 3) return 'Minimum 3 chars';
+                  return null;
+                },
               ),
-
-              TextFormField(
-                controller: phoneCtrl,
-                decoration: const InputDecoration(labelText: 'Phone'),
-              ),
-
+              const SizedBox(height: 15),
               TextFormField(
                 controller: passwordCtrl,
                 decoration: const InputDecoration(labelText: 'Password'),
                 obscureText: true,
+                onChanged: (_) => _formKey.currentState?.validate(),
+                validator: (value) {
+                  if (value == null || value.isEmpty) return 'Password required';
+                  if (!passwordRegex.hasMatch(value))
+                    return 'Min 8 chars, 1 caps, 1 number, 1 special char';
+                  return null;
+                },
               ),
-
-              const SizedBox(height: 10),
-
-              Wrap(
-                spacing: 10,
-                children: [
-                  ChoiceChip(
-                    label: const Text('Male'),
-                    selected: gender == 'Male',
-                    onSelected: (_) => setState(() => gender = 'Male'),
-                  ),
-                  ChoiceChip(
-                    label: const Text('Female'),
-                    selected: gender == 'Female',
-                    onSelected: (_) => setState(() => gender = 'Female'),
-                  ),
-                ],
+              const SizedBox(height: 20),
+              const Text('Gender', style: TextStyle(fontWeight: FontWeight.bold)),
+              RadioListTile<String>(
+                title: const Text('Male'),
+                value: 'Male',
+                groupValue: gender,
+                onChanged: (value) => setState(() => gender = value),
               ),
-
+              RadioListTile<String>(
+                title: const Text('Female'),
+                value: 'Female',
+                groupValue: gender,
+                onChanged: (value) => setState(() => gender = value),
+              ),
+              if (gender == null)
+                const Padding(
+                  padding: EdgeInsets.only(left: 16),
+                  child: Text('Please select gender', style: TextStyle(color: Colors.red)),
+                ),
               CheckboxListTile(
-                title: const Text('Agree'),
+                title: const Text('I Agree'),
                 value: agree,
-                onChanged: (v) => setState(() => agree = v!),
+                onChanged: (v) => setState(() => agree = v ?? false),
               ),
-
               CheckboxListTile(
-                title: const Text('Accept'),
+                title: const Text('I Accept Terms'),
                 value: accept,
-                onChanged: (v) => setState(() => accept = v!),
+                onChanged: (v) => setState(() => accept = v ?? false),
               ),
-
+              if (!agree || !accept)
+                const Padding(
+                  padding: EdgeInsets.only(left: 16),
+                  child: Text('You must agree and accept', style: TextStyle(color: Colors.red)),
+                ),
+              const SizedBox(height: 25),
               ElevatedButton(
                 onPressed: saveUser,
-                child: const Text('Submit'),
+                child: Text(widget.user == null ? 'Save' : 'Update'),
               ),
             ],
           ),
