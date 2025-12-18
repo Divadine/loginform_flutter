@@ -4,14 +4,16 @@ import 'package:d/buttons.dart';
 import 'package:d/floatButton.dart';
 import 'package:d/BottomNavigation.dart';
 import 'package:d/show_text.dart';
-import 'screens/login_form.dart';
+import 'screens/home_screen.dart';
+import 'database/hive_db.dart';
 void main() async {
   //runApp(const DemoApp());
   //runApp(ButtonApp());
   //runApp(FloatButtonApp());
   //runApp(const BottomNavBar());
   //runApp(ShowText());
-  WidgetsFlutterBinding.ensureInitialized(); // important
+  WidgetsFlutterBinding.ensureInitialized();
+  await HiveDB.init();
   runApp(const MyApp());
 }
 
@@ -90,14 +92,27 @@ void main() async {
 // }
 
 
+// class MyApp extends StatelessWidget {
+//   const MyApp({super.key});
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return const MaterialApp(
+//       debugShowCheckedModeBanner: false,
+//       home: LoginForm(), // open your login form
+//     );
+//   }
+// }
+
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: LoginForm(), // open your login form
+      home: const HomeScreen(),
     );
   }
 }
